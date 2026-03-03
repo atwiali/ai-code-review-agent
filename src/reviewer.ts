@@ -24,8 +24,17 @@ import { PRInfo, ReviewResult, AgentMetrics, ToolName } from "./types";
 import { toolDefinitions, executeTool } from "./tools";
 import { getSystemPrompt } from "./prompts";
 
+// Safety limit: max number of tools Claude can call in one review session.
+// 20 is enough for: list files + fetch diff + inspect ~10 files + post comment.
+// When reached, Claude is asked to wrap up gracefully instead of hard-stopping.
 const MAX_TOOL_CALLS = 20;
+
+// Cost/budget guard: max total tokens (input + output) per review.
+// Keeps a single review under ~$0.15–0.30 with Sonnet pricing.
+// When reached, Claude is asked to finalize its review.
 const MAX_TOTAL_TOKENS = 50_000;
+
+// The Claude model used for the review.
 const MODEL = "claude-sonnet-4-6";
 
 export async function runReview(
@@ -35,11 +44,17 @@ export async function runReview(
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
   const metrics: AgentMetrics = {
+    // Tracks how many tools Claude called — used to enforce MAX_TOOL_CALLS
     tool_calls_count: 0,
+    // Tokens sent to Claude (prompts, tool results) — tracks API cost
     total_input_tokens: 0,
+    // Tokens Claude generated (thinking, text, tool calls) — tracks API cost
     total_output_tokens: 0,
+    // How many times the agentic while-loop ran (API round-trips) — used for the hard stop safety net
     iterations: 0,
+    // Set of file paths Claude inspected — reported in the final summary
     files_inspected: new Set<string>(),
+    // Whether Claude successfully posted the review comment to GitHub
     comment_posted: false,
   };
 

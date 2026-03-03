@@ -15,52 +15,20 @@ import { PRInfo } from "./types";
 import { runReview } from "./reviewer";
 import { formatReviewAsMarkdown, formatReviewForConsole } from "./formatter";
 
-export async function parsePRInput(url: string): Promise<PRInfo> {
-  // Format 1: Direct PR URL — https://github.com/owner/repo/pull/123
-  const prMatch = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-  if (prMatch) {
-    return {
-      owner: prMatch[1],
-      repo: prMatch[2],
-      pull_number: parseInt(prMatch[3], 10),
-    };
-  }
-
-  // Format 2: "Create PR" URL — https://github.com/owner/repo/pull/new/branch-name
-  const newMatch = url.match(
-    /github\.com\/([^/]+)\/([^/]+)\/pull\/new\/(.+)/
-  );
-  if (newMatch) {
-    const [, owner, repo, branch] = newMatch;
-    console.log(
-      `Detected branch URL. Looking up open PR for branch "${branch}"...`
-    );
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-    const { data: prs } = await octokit.rest.pulls.list({
-      owner,
-      repo,
-      head: `${owner}:${branch}`,
-      state: "open",
-      per_page: 1,
-    });
-
-    if (prs.length > 0) {
-      console.log(`Found PR #${prs[0].number}`);
-      return { owner, repo, pull_number: prs[0].number };
-    }
-
+export function parsePRInput(url: string): PRInfo {
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+  if (!match) {
     throw new Error(
-      `No open PR found for branch "${branch}" in ${owner}/${repo}.\n` +
-        `Create the PR on GitHub first, then re-run this command.`
+      `Invalid PR URL: "${url}".\n` +
+        `Expected format: https://github.com/owner/repo/pull/123`
     );
   }
 
-  throw new Error(
-    `Invalid PR URL: "${url}".\n` +
-      `Supported formats:\n` +
-      `  https://github.com/owner/repo/pull/123\n` +
-      `  https://github.com/owner/repo/pull/new/branch-name`
-  );
+  return {
+    owner: match[1],
+    repo: match[2],
+    pull_number: parseInt(match[3], 10),
+  };
 }
 
 function validateEnv(): void {
@@ -88,7 +56,7 @@ async function main(): Promise<void> {
 
   validateEnv();
 
-  const prInfo = await parsePRInput(url);
+  const prInfo = parsePRInput(url);
   console.log(
     `Reviewing PR #${prInfo.pull_number} in ${prInfo.owner}/${prInfo.repo}...`
   );
