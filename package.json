@@ -1,0 +1,20 @@
+{
+  "name": "ai-code-review-agent",
+  "version": "1.0.0",
+  "description": "An agentic AI code reviewer that analyzes GitHub PRs using Claude",
+  "scripts": {
+    "review": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@octokit/rest": "^21.0.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  }
+}
