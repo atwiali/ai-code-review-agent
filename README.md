@@ -1,12 +1,25 @@
 # ai-code-review-agent
 
-An agent that takes a GitHub PR URL, fetches the diff, analyzes code quality and security issues, and writes a structured review — autonomously deciding which files need deeper analysis.
+An agentic AI code reviewer that takes a GitHub PR URL, autonomously fetches the diff, analyzes code quality and security issues, and posts a structured review — deciding on its own which files need deeper inspection.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
 - An [Anthropic API key](https://console.anthropic.com/)
-- A [GitHub personal access token](https://github.com/settings/tokens) with `repo` scope
+- A [GitHub personal access token](https://github.com/settings/tokens)
+
+### GitHub Token Permissions
+
+The token needs **read and write** access to pull requests so the agent can fetch PR data and post review comments.
+
+**Classic token** — select the `repo` scope (includes full read/write access).
+
+**Fine-grained token** — enable these repository permissions:
+| Permission | Access |
+|---|---|
+| **Pull requests** | Read and Write |
+| **Issues** | Read and Write |
+| **Contents** | Read |
 
 ## Setup
 
@@ -42,6 +55,8 @@ The agent will:
 3. Inspect files that need deeper analysis
 4. Post a structured review as a PR comment
 5. Print a colored summary to your terminal
+
+> See [EXAMPLE.md](EXAMPLE.md) for a full walkthrough with terminal output and screenshots.
 
 ## How It Works
 
